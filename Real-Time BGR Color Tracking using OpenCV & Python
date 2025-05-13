@@ -1,0 +1,65 @@
+import cv2
+import numpy as np
+
+def nothing():
+    pass
+
+# Open video capture (0 for default webcam)
+video = cv2.VideoCapture(0)
+
+# Create a window named 'Image'
+cv2.namedWindow("Image")
+
+# Create trackbars for lower and upper thresholds in BGR space
+cv2.createTrackbar("blue_lower", "Image", 0, 255, nothing)
+cv2.createTrackbar("blue_upper", "Image", 0, 255, nothing)
+cv2.createTrackbar("green_lower", "Image", 0, 255, nothing)
+cv2.createTrackbar("green_upper", "Image",0, 255, nothing)
+cv2.createTrackbar("red_lower", "Image", 0, 255, nothing)
+cv2.createTrackbar("red_upper", "Image", 0, 255, nothing)
+
+while True:
+    ret, fr = video.read()
+    if not ret:
+        print("Failed to grab frame")
+        break
+
+    # Split the frame into individual BGR channels
+    b, g, r = cv2.split(fr)
+
+    # Get trackbar positions for BGR ranges
+    bl = cv2.getTrackbarPos("blue_lower", "Image")
+    bu = cv2.getTrackbarPos("blue_upper", "Image")
+    gl = cv2.getTrackbarPos("green_lower", "Image")
+    gu = cv2.getTrackbarPos("green_upper", "Image")
+    rl = cv2.getTrackbarPos("red_lower", "Image")
+    ru = cv2.getTrackbarPos("red_upper", "Image")
+
+    # Apply the threshold mask on each individual channel
+    b_mask = cv2.inRange(b, bl, bu)
+    g_mask = cv2.inRange(g, gl, gu)
+    r_mask = cv2.inRange(r, rl, ru)
+
+    # Combine the individual masks into one final mask
+    final_mask = cv2.bitwise_and(b_mask, g_mask)
+    final_mask = cv2.bitwise_and(final_mask, r_mask)
+
+    # Apply the final mask to each channel separately
+    b_filtered = cv2.bitwise_and(b, b, mask=final_mask)
+    g_filtered = cv2.bitwise_and(g, g, mask=final_mask)
+    r_filtered = cv2.bitwise_and(r, r, mask=final_mask)
+
+    # Merge the filtered channels back into one image
+    image_mask = cv2.merge([b_filtered, g_filtered, r_filtered])
+
+    # Optional: Show original and filtered side by side
+    combined = np.hstack((fr, image_mask))
+    cv2.imshow("Image", combined)
+
+    # Press 'c' to break the loop
+    if cv2.waitKey(1) & 0xFF == ord('c'):
+        break
+
+# Release the video capture and close all windows
+video.release()
+cv2.destroyAllWindows()
