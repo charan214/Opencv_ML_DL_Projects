@@ -1,0 +1,57 @@
+import cv2
+import streamlit as st
+import numpy as np
+
+st.title("Morphological Operations")
+st.markdown(
+    """
+    <style>
+    .stApp{
+    background-color:#e0f7fa;
+    }
+    </style>
+    """,
+    unsafe_allow_html = True
+)
+
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    # Convert uploaded file to OpenCV image
+    
+    uploaded_file_name = uploaded_file.name
+    format = uploaded_file_name.split('.')[-1].lower()
+    file_mb = uploaded_file.size/(1024*1024)
+    
+    if format in ["png","jpg","jpeg"]:
+        if file_mb <= 200:
+            image = cv2.imdecode(np.frombuffer(uploaded_file.read(), np.uint8), 1)
+            img2 = cv2.resize(image, (500, 500))
+            
+            # Kernel for morphological operations
+            dt = np.ones((3, 3), dtype=np.uint8)
+            
+            # Perform operations
+            itr = st.sidebar.slider("Select number of iterations", min_value=1, max_value=10, value=1)
+            dilation = cv2.dilate(img2, dt, iterations=itr)
+            erosion = cv2.erode(img2, dt, iterations=itr)
+            gradient = cv2.morphologyEx(img2, cv2.MORPH_GRADIENT, dt,iterations=itr)
+            opening = cv2.morphologyEx(img2, cv2.MORPH_OPEN, dt,iterations=itr)
+            closing = cv2.morphologyEx(img2, cv2.MORPH_CLOSE, dt,iterations=itr)
+            tophat = cv2.morphologyEx(img2, cv2.MORPH_TOPHAT, dt,iterations=itr)
+            blackhat = cv2.morphologyEx(img2, cv2.MORPH_BLACKHAT, dt,iterations=itr)
+        
+            # Display all images with captions
+            
+            st.image(img2, caption="Original Image", channels="BGR")
+            st.image(dilation, caption="Dilation Image", channels="BGR")
+            st.image(erosion, caption="Erosion Image", channels="BGR")
+            st.image(gradient, caption="Gradient Image", channels="BGR")
+            st.image(opening, caption="Opening Image", channels="BGR")
+            st.image(closing, caption="Closing Image", channels="BGR")
+            st.image(tophat, caption="Top Hat Image", channels="BGR")
+            st.image(blackhat, caption="Black Hat Image", channels="BGR")
+        else:
+            st.write("Upload image size having lessthan 200MB")
+    else:
+        st.write("Upload image Extension  should be in ['jpg', 'jpeg', 'png']")
